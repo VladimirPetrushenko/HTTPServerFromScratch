@@ -11,4 +11,18 @@
     <ProjectReference Include="..\HTTPServerFromScratch.ItSelf\HTTPServerFromScratch.ItSelf.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="www\Index.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Index.txt</LastGenOutput>
+    </None>
+    <None Update="www\Index.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
 </Project>
