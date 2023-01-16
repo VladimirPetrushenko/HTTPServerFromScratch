@@ -3,6 +3,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using System.Net.Sockets;
 
 namespace HTTPServerFromScratch.ItSelf
 {
@@ -55,6 +56,19 @@ namespace HTTPServerFromScratch.ItSelf
             }
         }
 
+        public async Task HandleAsync(Stream networkStream, Request request)
+        {
+            if (!_routes.TryGetValue(request.Path, out var func))
+            {
+                await ResponseWriter.WriteStatusAsync(HttpStatusCode.NotFound, networkStream);
+            }
+            else
+            {
+                await ResponseWriter.WriteStatusAsync(HttpStatusCode.OK, networkStream);
+                await WriteControllerResponseAsync(func(), networkStream);
+            }
+        }
+
         private void WriteControllerResponse(object? response, Stream networkStream)
         {
             if(response is string str)
@@ -69,6 +83,28 @@ namespace HTTPServerFromScratch.ItSelf
             else
             {
                 WriteControllerResponse(JsonSerializer.Serialize(response), networkStream);
+            }
+        }
+
+        private async Task WriteControllerResponseAsync(object? response, Stream networkStream)
+        {
+            if (response is string str)
+            {
+                using var writer = new StreamWriter(networkStream, leaveOpen: true);
+                await writer.WriteAsync(str);
+            }
+            else if (response is byte[] bytes)
+            {
+                await networkStream.WriteAsync(bytes, 0, bytes.Length);
+            }
+            else if(response is Task task)
+            {
+                await task;
+                await WriteControllerResponseAsync(task.GetType().GetProperty("Result")?.GetValue(task), networkStream);
+            }
+            else
+            {
+                await WriteControllerResponseAsync(JsonSerializer.Serialize(response), networkStream);
             }
         }
     }
