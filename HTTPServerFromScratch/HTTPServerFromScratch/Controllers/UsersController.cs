@@ -8,7 +8,7 @@ namespace HTTPServerFromScratch.Controllers
         {
             Thread.Sleep(30);
 
-            return new []
+            return new[]
             {
                 new User("Vladimir", "barrierofdust", "Itransition"),
                 new User("Vladimir", "Vladimir", "Itransition"),

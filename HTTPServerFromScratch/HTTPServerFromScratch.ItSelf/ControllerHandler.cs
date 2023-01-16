@@ -1,10 +1,7 @@
-﻿using System.Text;
+﻿using System.Linq.Expressions;
 using System.Net;
 using System.Reflection;
-using System.Text.Json.Serialization;
 using System.Text.Json;
-using System.Net.Sockets;
-using System.Linq.Expressions;
 
 namespace HTTPServerFromScratch.ItSelf
 {
@@ -19,7 +16,7 @@ namespace HTTPServerFromScratch.ItSelf
                 .Where(x => typeof(IController).IsAssignableFrom(x))
                 .SelectMany(controller => controller.GetMethods().Select(method => new { controller, method }))
                 .ToDictionary(
-                    key => GetPath(key.controller, key.method), 
+                    key => GetPath(key.controller, key.method),
                     value => GetEndpointMethod(value.controller, value.method));
 
         }
@@ -47,7 +44,7 @@ namespace HTTPServerFromScratch.ItSelf
 
         public void Handle(Stream networkStream, Request request)
         {
-            if(!_routes.TryGetValue(request.Path, out var func))
+            if (!_routes.TryGetValue(request.Path, out var func))
             {
                 ResponseWriter.WriteStatus(HttpStatusCode.NotFound, networkStream);
             }
@@ -73,12 +70,12 @@ namespace HTTPServerFromScratch.ItSelf
 
         private void WriteControllerResponse(object? response, Stream networkStream)
         {
-            if(response is string str)
+            if (response is string str)
             {
                 using var writer = new StreamWriter(networkStream, leaveOpen: true);
                 writer.Write(str);
             }
-            else if(response is byte[] bytes)
+            else if (response is byte[] bytes)
             {
                 networkStream.Write(bytes, 0, bytes.Length);
             }
@@ -99,7 +96,7 @@ namespace HTTPServerFromScratch.ItSelf
             {
                 await networkStream.WriteAsync(bytes, 0, bytes.Length);
             }
-            else if(response is Task task)
+            else if (response is Task task)
             {
                 await task;
                 await WriteControllerResponseAsync(ExtractValue(task), networkStream);
@@ -110,7 +107,7 @@ namespace HTTPServerFromScratch.ItSelf
                 await WriteControllerResponseAsync(JsonSerializer.Serialize(response), networkStream);
             }
         }
-        
+
         private object? ExtractValue(Task task)
         {
             var taskType = task.GetType();
@@ -119,7 +116,7 @@ namespace HTTPServerFromScratch.ItSelf
                 return null;
             }
 
-            if(!_extractors.TryGetValue(taskType, out var extractor))
+            if (!_extractors.TryGetValue(taskType, out var extractor))
             {
                 _extractors.Add(taskType, extractor = CreateExtractor(taskType));
             }
@@ -130,11 +127,11 @@ namespace HTTPServerFromScratch.ItSelf
         private Func<Task, object?> CreateExtractor(Type taskType)
         {
             var param = Expression.Parameter(typeof(Task));
-            return (Func<Task, object?>)Expression.Lambda(typeof(Func<Task, object?>), 
+            return (Func<Task, object?>)Expression.Lambda(typeof(Func<Task, object?>),
                 Expression.Convert(
                     Expression.Property(
-                        Expression.Convert(param, taskType), 
-                        "Result"), 
+                        Expression.Convert(param, taskType),
+                        "Result"),
                     typeof(object)),
                 param)
                 .Compile();

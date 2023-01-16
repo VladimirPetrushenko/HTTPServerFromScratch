@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Reflection.PortableExecutable;
 
 namespace HTTPServerFromScratch.ItSelf
 {
@@ -48,7 +47,7 @@ namespace HTTPServerFromScratch.ItSelf
             {
                 var client = listener.AcceptTcpClient();
                 ProcessClient(client);
-                
+
             }
         }
 
