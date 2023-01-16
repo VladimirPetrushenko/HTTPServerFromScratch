@@ -4,12 +4,14 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Net.Sockets;
+using System.Linq.Expressions;
 
 namespace HTTPServerFromScratch.ItSelf
 {
     public class ControllerHandler : IHandler
     {
         private readonly Dictionary<string, Func<object?>> _routes;
+        private readonly Dictionary<Type, Func<Task, object?>> _extractors = new Dictionary<Type, Func<Task, object?>>();
 
         public ControllerHandler(Assembly assembly)
         {
@@ -100,12 +102,42 @@ namespace HTTPServerFromScratch.ItSelf
             else if(response is Task task)
             {
                 await task;
-                await WriteControllerResponseAsync(task.GetType().GetProperty("Result")?.GetValue(task), networkStream);
+                await WriteControllerResponseAsync(ExtractValue(task), networkStream);
+                //await WriteControllerResponseAsync(task.GetType().GetProperty("Result")?.GetValue(task), networkStream);
             }
             else
             {
                 await WriteControllerResponseAsync(JsonSerializer.Serialize(response), networkStream);
             }
+        }
+        
+        private object? ExtractValue(Task task)
+        {
+            var taskType = task.GetType();
+            if (!taskType.IsGenericType)
+            {
+                return null;
+            }
+
+            if(!_extractors.TryGetValue(taskType, out var extractor))
+            {
+                _extractors.Add(taskType, extractor = CreateExtractor(taskType));
+            }
+
+            return extractor(task);
+        }
+
+        private Func<Task, object?> CreateExtractor(Type taskType)
+        {
+            var param = Expression.Parameter(typeof(Task));
+            return (Func<Task, object?>)Expression.Lambda(typeof(Func<Task, object?>), 
+                Expression.Convert(
+                    Expression.Property(
+                        Expression.Convert(param, taskType), 
+                        "Result"), 
+                    typeof(object)),
+                param)
+                .Compile();
         }
     }
 }
