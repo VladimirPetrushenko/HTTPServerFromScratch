@@ -10,11 +10,11 @@
 
         private static HttpMethod GetMethod(string method)
         {
-            if(method.Equals("GET", StringComparison.InvariantCultureIgnoreCase))
+            if (method.Equals("GET", StringComparison.InvariantCultureIgnoreCase))
             {
                 return HttpMethod.Get;
             }
-            else if(method.Equals("POST", StringComparison.InvariantCultureIgnoreCase))
+            else if (method.Equals("POST", StringComparison.InvariantCultureIgnoreCase))
             {
                 return HttpMethod.Post;
             }

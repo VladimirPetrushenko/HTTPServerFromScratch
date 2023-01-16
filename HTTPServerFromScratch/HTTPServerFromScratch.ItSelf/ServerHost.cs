@@ -1,5 +1,6 @@
-﻿using System.Net.Sockets;
-using System.Net;
+﻿using System.Net;
+using System.Net.Sockets;
+using System.Reflection.PortableExecutable;
 
 namespace HTTPServerFromScratch.ItSelf
 {
@@ -18,13 +19,21 @@ namespace HTTPServerFromScratch.ItSelf
             listener.Start();
 
 
-            while(true) 
+            while (true)
             {
                 var client = listener.AcceptTcpClient();
 
                 using (var stream = client.GetStream())
+                using (var reader = new StreamReader(stream))
                 {
-                    _handler.Handle(stream);
+                    var firstLine = reader.ReadLine();
+                    //if we don't read all headers from the request, your request is pending
+                    for (string? line = null; line != string.Empty; line = reader.ReadLine())
+                        ;
+
+                    var request = RequestParser.RequestParse(firstLine);
+
+                    _handler.Handle(stream, request);
                 }
             }
         }

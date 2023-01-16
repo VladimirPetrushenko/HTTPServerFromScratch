@@ -1,4 +1,4 @@
 ﻿using HTTPServerFromScratch.ItSelf;
 
-var serverHost = new ServerHost(new StaticFileHandler(Path.Combine(Environment.CurrentDirectory, "www")));
+var serverHost = new ServerHost(new ControllerHandler(typeof(Program).Assembly));
 serverHost.Start();
